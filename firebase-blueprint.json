@@ -1,0 +1,158 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Perfil privado do motorista autenticado no Gestão Car.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "email"]
+    },
+    "Ride": {
+      "title": "Ride",
+      "description": "Registro enxuto de corrida com valor, forma de pagamento e data/horário.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "valor": {
+          "type": "number",
+          "description": "Valor da corrida em reais."
+        },
+        "amountCents": {
+          "type": "integer",
+          "description": "Valor da corrida em centavos inteiros."
+        },
+        "formaPagamento": {
+          "type": "string",
+          "enum": ["Dinheiro", "Pix", "Cartão"]
+        },
+        "data": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "horario": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 10
+        },
+        "timestampMs": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "valor", "amountCents", "formaPagamento", "data", "horario", "timestampMs", "createdAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Registro enxuto de gasto com valor, categoria, descrição e data.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "valor": {
+          "type": "number",
+          "description": "Valor do gasto em reais."
+        },
+        "amountCents": {
+          "type": "integer",
+          "description": "Valor do gasto em centavos inteiros."
+        },
+        "categoria": {
+          "type": "string",
+          "enum": [
+            "Combustível",
+            "Alimentação",
+            "Manutenção",
+            "Lavagem",
+            "Estacionamento",
+            "Pedágio",
+            "Outros"
+          ]
+        },
+        "descricao": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "data": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "timestampMs": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "valor", "amountCents", "categoria", "descricao", "data", "timestampMs", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Documento de perfil do usuário autenticado."
+    },
+    "/users/{uid}/rides/{rideId}": {
+      "schema": { "$ref": "#/entities/Ride" },
+      "description": "Corridas registradas pelo motorista."
+    },
+    "/users/{uid}/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Gastos registrados pelo motorista."
+    }
+  }
+}

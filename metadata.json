@@ -1,0 +1,6 @@
+{
+  "name": "GESTÃO CAR",
+  "description": "Sistema profissional de controle financeiro, corridas, despesas, quilometragem e metas para motoristas de aplicativos (Uber, 99, InDrive).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

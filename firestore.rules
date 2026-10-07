@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validação do perfil do usuário
+    function isValidUserProfile(data, uid) {
+      return data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == uid &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 150;
+    }
+
+    // Validação de corrida (suporta formato simplificado e campos de compatibilidade)
+    function isValidRide(data, uid) {
+      return data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == uid &&
+             data.amountCents is int && data.amountCents > 0 && data.amountCents <= 100000000 &&
+             (data.valor is int || data.valor is float) && data.valor > 0 && data.valor <= 1000000 &&
+             data.formaPagamento is string && data.formaPagamento.size() >= 1 && data.formaPagamento.size() <= 40 &&
+             data.formaPagamento in ['Dinheiro', 'Pix', 'Cartão'] &&
+             data.data is string && data.data.size() == 10 &&
+             data.horario is string && data.horario.size() >= 4 && data.horario.size() <= 10 &&
+             data.timestampMs is int && data.timestampMs > 0;
+    }
+
+    // Validação de gasto (suporta formato simplificado e campos de compatibilidade)
+    function isValidExpense(data, uid) {
+      return data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == uid &&
+             data.amountCents is int && data.amountCents > 0 && data.amountCents <= 100000000 &&
+             (data.valor is int || data.valor is float) && data.valor > 0 && data.valor <= 1000000 &&
+             data.categoria is string && data.categoria.size() >= 1 && data.categoria.size() <= 60 &&
+             data.descricao is string && data.descricao.size() <= 200 &&
+             data.data is string && data.data.size() == 10 &&
+             data.timestampMs is int && data.timestampMs > 0;
+    }
+
+    match /users/{uid} {
+      allow get: if isOwner(uid) && isValidId(uid);
+      allow list: if isOwner(uid) && existing().uid == request.auth.uid;
+      allow create: if isOwner(uid) && isValidId(uid) && isValidUserProfile(incoming(), uid);
+      allow update: if isOwner(uid) && isValidId(uid) &&
+                    isValidUserProfile(incoming(), uid) &&
+                    incoming().uid == existing().uid;
+      allow delete: if isOwner(uid) && isValidId(uid);
+
+      // Subcoleção: Corridas (Rides)
+      match /rides/{rideId} {
+        allow get: if isOwner(uid) && isValidId(uid) && isValidId(rideId);
+        allow list: if isOwner(uid) && existing().uid == request.auth.uid;
+        allow create: if isOwner(uid) && isValidId(uid) && isValidId(rideId) &&
+                      isValidRide(incoming(), uid);
+        allow update: if isOwner(uid) && isValidId(uid) && isValidId(rideId) &&
+                      isValidRide(incoming(), uid) &&
+                      incoming().uid == existing().uid;
+        allow delete: if isOwner(uid) && isValidId(uid) && isValidId(rideId);
+      }
+
+      // Subcoleção: Gastos (Expenses)
+      match /expenses/{expenseId} {
+        allow get: if isOwner(uid) && isValidId(uid) && isValidId(expenseId);
+        allow list: if isOwner(uid) && existing().uid == request.auth.uid;
+        allow create: if isOwner(uid) && isValidId(uid) && isValidId(expenseId) &&
+                      isValidExpense(incoming(), uid);
+        allow update: if isOwner(uid) && isValidId(uid) && isValidId(expenseId) &&
+                      isValidExpense(incoming(), uid) &&
+                      incoming().uid == existing().uid;
+        allow delete: if isOwner(uid) && isValidId(uid) && isValidId(expenseId);
+      }
+    }
+  }
+}
